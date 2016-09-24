@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+
+""" A simple echo client that handles some exceptions """
+
+import socket
+import sys
+import pickle
+
+host = ''
+port = 50000
+size = 1024
+s = None
+
+def openClient():
+    global host
+    host = '192.168.0.112'
+    global port
+    port = 50000
+    global size
+    size = 1024
+    global s
+    s = None
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #use AF_INET so we can connect to a client on another machine
+                                                             #SOCK_STREAM - Use TCP/IP transmission protocol for
+                                                               #reliability
+        s.connect((host, port)) #connect to remote address given by (host, port) Tuple
+    except socket.error(value, message): #If we have an issue connecting to the remote socket..
+        if s:
+            s.close() #socket is closed
+        print('Could not open socket: ' + str(message))
+        sys.exit(1)
+    print('--')
+
+openClient()
+
+
+Key = b"testExample54332thisISenCryPteD12343_55555"                      #Encrypt / Decrypt Key
+Token = b"thisIstheEncryptedQueStIONAndyoucAnNOTReaDit434123412423"      #Encrypted Question Text
+Checksum = "79cfdb00e9asdfjasdkf123432143jlkasdfjl;ds"                      #MD5 hash of encrypted question text
+ipAddr = "This will be provided as input by the user. Ex: 192.168.0.112"    #Server IP Address
+messageToSend = (Key, Token, Checksum, ipAddr)  #Question payload, Tuple
+
+#s.send(str.encode(messageToSend)) #send byte data to server
+s.send(pickle.dumps(messageToSend))
+
+data = s.recv(size) #receive byte data from server
+#print('Received: ', str(data,encoding='utf-8', errors='strict'))
+print('Received: ', str(pickle.loads(data)))
+
+s.close()
+
+
+

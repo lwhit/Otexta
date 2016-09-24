@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+""" A simple echo server that handles some exceptions """
+
+import socket
+import sys
+import pickle
+
+""" Useful terminal commands:
+    ps aux | grep python    - Use to find server task running in background if it was not closed correctly
+    sudo kill -9 PID        - Kill the task keeping port 50000 open, replace PID with correct task ID
+"""
+
+print("SERVER\n\n")
+
+host = ''
+port = 50000    # Using port 50000. Client will attempt to connect to port 50000 to send messages
+backlog = 5     # Allow up to 5 incoming messages to wait to be read
+size = 1024     # max size of message coming in is 1024 bits
+s = None        # s is our socket object. Right now it is null
+
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   #use AF_INET so we can connect to a client on another machine
+                                                            #SOCK_STREAM - Use TCP/IP transmission protocol for
+                                                                #reliability
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  #SOL_SOCKET allows us to manipulate socket-level options
+                                                            #SO_REUSEADDR allows us to reuse local addresses for this socket
+    s.bind((host,port))     #binds the socket to address given by (host, port)
+    s.listen(backlog)   #enables a server to accept connections. *backlog specifies the number of unaccepted connections
+                        #that the system will allow before refusing new connections
+
+except socket.error as message:     #If there is an error, the error will be stored in message. Run this segment
+    if s:
+        s.close()
+    print ("Could not open socket: " + str(message))
+    sys.exit(1)
+
+while 1:
+    client, address = s.accept()    #accept a connection, socket must be bound to an address and listening at this point
+                                    #return value:
+                                        #client: a new socket object usable to send and receive data on the connection
+                                        #address: the address bound to the socket on the other end of the connection
+    data = client.recv(size)    #receive data from the socket
+    if data:    #if we received data..
+        cleanInput = str(pickle.loads(data))   #convert byte data we received to string format
+        client.send(data)   #send what we received. This is here to show the client that we are receiving data correctly
+        print("Received message: " + cleanInput)
+        if cleanInput == 'stopServer':
+            print('Client has chosen to stop Server')
+            break
+client.close() #close socket connection when we are finished.
