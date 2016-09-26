@@ -60,7 +60,7 @@ q_payload = (key, token, q_md_hash, serv_addr)
 
 # Initialize variables
 host = ''
-port = 50000
+port = 55555
 size = 1024
 s = None
 
