@@ -4,6 +4,9 @@ import socket
 import pickle
 import hashlib
 
+import RPi.GPIO as GPIO
+import time
+
 import urllib2
 import urllib
 import httplib
@@ -70,6 +73,17 @@ serverFD = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serverFD.bind((host, port))
 serverFD.listen(backlog)
 
+# Initalize RPi GPIO
+# pin 21 = blue, pin 20 = green, pin 16 = red
+GPIO.setmode( GPIO.BCM )
+GPIO.setup(16, GPIO.OUT)
+GPIO.setup(20, GPIO.OUT)
+GPIO.setup(21, GPIO.OUT)
+GPIO.setwarnings(False)
+GPIO.output(16, True)
+GPIO.output(20, False)
+GPIO.output(21, False)
+
 while True:
 	print("Awaiting Connection")
 
@@ -93,10 +107,22 @@ while True:
 		# Decrypt message
 		f = Fernet(key)
 		f.decrypt(question)
+		
+		# Receive payload question and deconstruct
+		GPIO.output(20, GPIO.HIGH)
+		time.sleep(3)
 
-		### Send question to Wolfram API
+		# Send question to Wolfram API
+		GPIO.output(21, GPIO.HIGH)
+		GPIO.output(16, GPIO.LOW)
+		time.sleep(3)
+
 		answer = QueryFunction(question)
-		###
+
+		# Receive answer payload
+		GPIO.output(16, GPIO.HIGH)
+		GPIO.output(20, GPIO.LOW)
+		time.sleep(3)
 		
 		# Encrypt answer message
 		answer = f.encrypt()
@@ -106,7 +132,11 @@ while True:
 		pickle_payload = dumps(s_payload)
 		
 		# Send answer payload back to client
+		GPIO.output(20, GPIO.HIGH)
+		time.sleep(3)
 		clientFD.send(pickle_payload)
-		clientFD.close()
+	
+	clientFD.close()
+	GPIO.cleanup()
 
 serverFD.close()
