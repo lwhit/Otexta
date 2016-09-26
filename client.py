@@ -3,10 +3,35 @@ import cryptography
 import hashlib
 import socket
 import pickle
-#import time
 
 from cryptography.fernet import Fernet
 
+def openClient():
+    global host
+    host = sys.argv[2]
+    global port
+    port = 50000
+    global size
+    size = 1024
+    global s
+    s = None
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #use AF_INET so we can connect to a client on another machine
+                                                             #SOCK_STREAM - Use TCP/IP transmission protocol for
+                                                               #reliability
+        s.connect((host, port)) #connect to remote address given by (host, port) Tuple
+    except socket.error(value, message): #If we have an issue connecting to the remote socket..
+        if s:
+            s.close() #socket is closed
+        print('Could not open socket: ' + str(message))
+        sys.exit(1)
+    print('--')
+
+# Check to make sure user has supplied correct inputs
+if len(sys.argv) != 3:
+    sys.exit("Please provide a question and the server IP address when running this file\n\n")
+    
 # Getting values from the arguments
 question = sys.argv[1]
 serv_addr = sys.argv[2]
@@ -33,42 +58,19 @@ q_md_hash = q_hash.hexdigest()
 # Creating the payload to be sent to the server
 q_payload = (key, token, q_md_hash, serv_addr)
 
+# Initialize variables
 host = ''
 port = 50000
 size = 1024
 s = None
 
-def openClient():
-    global host
-    host = '192.168.0.112'
-    global port
-    port = 50000
-    global size
-    size = 1024
-    global s
-    s = None
-
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #use AF_INET so we can connect to a client on another machine
-                                                             #SOCK_STREAM - Use TCP/IP transmission protocol for
-                                                               #reliability
-        s.connect((host, port)) #connect to remote address given by (host, port) Tuple
-    except socket.error(value, message): #If we have an issue connecting to the remote socket..
-        if s:
-            s.close() #socket is closed
-        print('Could not open socket: ' + str(message))
-        sys.exit(1)
-    print('--')
-
 openClient()
 
-messageToSend = q_payload  #Question payload, Tuple
+# Pickle payload tuple
+s.send(pickle.dumps(q_payload))
 
-#s.send(str.encode(messageToSend)) #send byte data to server
-s.send(pickle.dumps(messageToSend))
-
-data = s.recv(size) #receive byte data from server
-#print('Received: ', str(data,encoding='utf-8', errors='strict'))
+# Receive byte data from server
+data = s.recv(size) 
 print('Received: ', str(pickle.loads(data)))
 
 s.close()
