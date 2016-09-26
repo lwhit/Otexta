@@ -10,7 +10,7 @@ def openClient():
     global host
     host = sys.argv[2]
     global port
-    port = 50000
+    port = 55555
     global size
     size = 1024
     global s
